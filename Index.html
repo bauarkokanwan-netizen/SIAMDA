@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SIAMDA</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f6fb;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-width: 400px;
+      margin: auto;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      font-weight: bold;
+    }
+
+    video {
+      width: 100%;
+      border-radius: 12px;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>SIAMDA Login</h2>
+
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
+
+  <button onclick="login()">Login</button>
+
+  <div id="dashboard" style="display:none; margin-top:20px;">
+    <h3 id="welcome"></h3>
+
+    <video id="camera" autoplay playsinline></video>
+
+    <button onclick="getLocationAndSubmit('MASUK')">Absen Masuk</button>
+    <button onclick="getLocationAndSubmit('PULANG')">Absen Pulang</button>
+  </div>
+</div>
+
+<script>
+let currentUser = null;
+
+async function startCamera() {
+  const video = document.getElementById('camera');
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  video.srcObject = stream;
+}
+
+function login() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  google.script.run.withSuccessHandler(function(res) {
+    if (res.success) {
+      currentUser = res.user;
+      document.getElementById('dashboard').style.display = 'block';
+      document.getElementById('welcome').innerText = 'Welcome ' + res.user.name;
+      startCamera();
+    } else {
+      alert('Login failed');
+    }
+  }).login(email, password);
+}
+
+function getLocationAndSubmit(type) {
+  navigator.geolocation.getCurrentPosition(function(pos) {
+
+    const payload = {
+      userId: currentUser.id,
+      name: currentUser.name,
+      type: type,
+      latitude: pos.coords.latitude,
+      longitude: pos.coords.longitude
+    };
+
+    google.script.run.withSuccessHandler(function(res) {
+      alert('Absensi berhasil');
+    }).submitAttendance(payload);
+
+  });
+}
+</script>
+
+</body>
+</html>
